@@ -1,0 +1,16 @@
+[Unit]
+Description=AHM09 Headset Button Daemon
+After=graphical-session.target
+Requires=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart={{ user_home }}/.local/share/ahm09-daemon/ahm09-daemon.py
+Restart=on-failure
+RestartSec=5
+Environment=DISPLAY=:0
+Environment=XAUTHORITY={{ user_home }}/.Xauthority
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/%U/bus
+
+[Install]
+WantedBy=default.target

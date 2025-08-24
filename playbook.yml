@@ -1,0 +1,106 @@
+- name: Deploy AHM09 Headset Button Daemon
+  hosts: localhost
+  connection: local
+  become: true
+  become_method: ansible.builtin.sudo
+  vars:
+    user: "{{ ansible_user_id }}"
+    user_home: "/home/{{ user }}"
+
+  tasks:
+    - name: Install required packages
+      community.general.pacman:
+        name:
+          - python-pyusb
+        state: present
+
+    - name: Create usbusers group
+      ansible.builtin.group:
+        name: usbusers
+        state: present
+
+    - name: Add user to usbusers group
+      ansible.builtin.user:
+        name: "{{ user }}"
+        groups: usbusers
+        append: true
+
+    - name: Create udev rules directory
+      ansible.builtin.file:
+        path: /etc/udev/rules.d
+        state: directory
+        mode: '0755'
+
+    - name: Deploy udev rules
+      ansible.builtin.copy:
+        src: files/ahm09-permissions.rules
+        dest: /etc/udev/rules.d/99-ahm09-permissions.rules
+        mode: '0644'
+
+    - name: Reload udev rules
+      ansible.builtin.command: udevadm control --reload-rules
+      changed_when: false
+
+    - name: Trigger udev rules
+      ansible.builtin.command: udevadm trigger
+      changed_when: false
+
+    - name: Create daemon directory
+      ansible.builtin.file:
+        path: "{{ user_home }}/.local/share/ahm09-daemon"
+        state: directory
+        mode: '0755'
+        owner: "{{ user }}"
+        group: "{{ user }}"
+
+    - name: Deploy AHM09 daemon script
+      ansible.builtin.copy:
+        src: files/ahm09-daemon.py
+        dest: "{{ user_home }}/.local/share/ahm09-daemon/ahm09-daemon.py"
+        mode: '0755'
+        owner: "{{ user }}"
+        group: "{{ user }}"
+
+    - name: Create systemd user directory
+      ansible.builtin.file:
+        path: "{{ user_home }}/.config/systemd/user"
+        state: directory
+        mode: '0755'
+        owner: "{{ user }}"
+        group: "{{ user }}"
+
+    - name: Deploy systemd service
+      ansible.builtin.template:
+        src: templates/ahm09-daemon.service.j2
+        dest: "{{ user_home }}/.config/systemd/user/ahm09-daemon.service"
+        mode: '0644'
+        owner: "{{ user }}"
+        group: "{{ user }}"
+
+    - name: Enable linger for user (for user services at boot)
+      ansible.builtin.command: loginctl enable-linger "{{ user }}"
+      changed_when: false
+
+    - name: Reload systemd user daemon
+      ansible.builtin.systemd:
+        daemon_reload: true
+        scope: user
+
+    - name: Enable and start AHM09 daemon service
+      ansible.builtin.systemd:
+        name: ahm09-daemon.service
+        state: started
+        enabled: true
+        scope: user
+        daemon_reload: true
+      become: false
+
+    # - name: Show status of AHM09 daemon
+    #   command: systemctl --user status ahm09-daemon.service
+    #   become_user: "{{ user }}"
+    #   register: service_status
+    #   changed_when: false
+
+    # - name: Display service status
+    #   debug:
+    #     msg: "{{ service_status.stdout }}"
