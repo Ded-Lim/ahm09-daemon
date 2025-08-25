@@ -1,7 +1,6 @@
 - name: Deploy AHM09 Headset Button Daemon
   hosts: localhost
   connection: local
-  become: true
   become_method: ansible.builtin.sudo
   vars:
     user: "{{ ansible_user_id }}"
@@ -13,37 +12,44 @@
         name:
           - python-pyusb
         state: present
+      become: true
 
     - name: Create usbusers group
       ansible.builtin.group:
         name: usbusers
         state: present
+      become: true
 
     - name: Add user to usbusers group
       ansible.builtin.user:
         name: "{{ user }}"
         groups: usbusers
         append: true
+      become: true
 
     - name: Create udev rules directory
       ansible.builtin.file:
         path: /etc/udev/rules.d
         state: directory
         mode: '0755'
+      become: true
 
     - name: Deploy udev rules
       ansible.builtin.copy:
         src: files/ahm09-permissions.rules
         dest: /etc/udev/rules.d/99-ahm09-permissions.rules
         mode: '0644'
+      become: true
 
     - name: Reload udev rules
       ansible.builtin.command: udevadm control --reload-rules
       changed_when: false
+      become: true
 
     - name: Trigger udev rules
       ansible.builtin.command: udevadm trigger
       changed_when: false
+      become: true
 
     - name: Create daemon directory
       ansible.builtin.file:
@@ -93,7 +99,6 @@
         enabled: true
         scope: user
         daemon_reload: true
-      become: false
 
     # - name: Show status of AHM09 daemon
     #   command: systemctl --user status ahm09-daemon.service

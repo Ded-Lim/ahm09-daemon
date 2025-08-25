@@ -34,10 +34,10 @@ def main():
                     
                     # Обрабатываем кнопки
                     if data[0] == 1:    # Volume Up
-                        os.system("pactl set-sink-volume @DEFAULT_SINK@ +2%")
+                        os.system("pactl set-sink-volume @DEFAULT_SINK@ +1%")
                         print("🔊 Громкость +")
                     elif data[0] == 2:  # Volume Down
-                        os.system("pactl set-sink-volume @DEFAULT_SINK@ -2%")
+                        os.system("pactl set-sink-volume @DEFAULT_SINK@ -1%")
                         print("🔉 Громкость -")
                     elif data[0] == 8:  # Play/Pause
                         os.system("playerctl play-pause 2>/dev/null")
