@@ -95,7 +95,7 @@
     - name: Enable and start AHM09 daemon service
       ansible.builtin.systemd:
         name: ahm09-daemon.service
-        state: started
+        state: restarted
         enabled: true
         scope: user
         daemon_reload: true
